@@ -1,0 +1,73 @@
+{
+  "agentCards": [
+    {
+      "agentId": "echo_word_companion",
+      "name": "回声词伴",
+      "description": "连接小艺系统入口与回声词伴应用 Agent：支持应用交接、系统侧快速辨析，以及进入应用后的独立学习。",
+      "provider": {
+        "organization": "a2a-explore",
+        "url": "https://example.com/echo-word-companion"
+      },
+      "version": "0.4.0",
+      "documentationUrl": "https://example.com/echo-word-companion/docs",
+      "capabilities": {
+        "streaming": false,
+        "pushNotifications": false,
+        "stateTransitionHistory": true,
+        "extendedAgentCard": false
+      },
+      "defaultInputModes": ["text/plain"],
+      "defaultOutputModes": ["text/plain", "application/json"],
+      "skills": [
+        {
+          "id": "start_word_review_in_app",
+          "name": "在应用中开始单词复习",
+          "description": "准备回声词伴应用入口并传递复习公开意图；进入应用后由应用 Agent 独立创建或恢复学习会话。",
+          "tags": ["单词", "抽背", "易错词", "复习", "英语学习"],
+          "examples": [
+            "陪我复习今天到期的单词",
+            "抽背十个易错词",
+            "打开回声词伴继续上次的单词复习"
+          ],
+          "inputModes": ["text/plain"],
+          "outputModes": ["text/plain", "application/json"]
+        },
+        {
+          "id": "quick_word_confusion_qa",
+          "name": "快速辨析易混词",
+          "description": "在系统侧返回 resilient 与 resistant 的最小解释，并提供进入应用练习的后续入口。",
+          "tags": ["单词", "易混词", "辨析", "近义词", "英语理解"],
+          "examples": [
+            "解释 resilient 和 resistant 的区别",
+            "我总是混淆 resilient 和 resistant",
+            "resilient 和 resistant 有什么不同"
+          ],
+          "inputModes": ["text/plain"],
+          "outputModes": ["text/plain", "application/json"]
+        },
+        {
+          "id": "practice_word_confusion_in_app",
+          "name": "在应用中练习易混词",
+          "description": "准备回声词伴深度练习入口；判断、解释、学习证据和后续个性化由应用 Agent 负责。",
+          "tags": ["单词", "易混词", "情境练习", "应用交接", "英语理解"],
+          "examples": [
+            "用一个情境帮我区分 resilient 和 resistant",
+            "打开应用练习 resilient 和 resistant",
+            "测试我能不能真正区分 resilient 和 resistant"
+          ],
+          "inputModes": ["text/plain"],
+          "outputModes": ["text/plain", "application/json"]
+        }
+      ],
+      "iconUrl": "common/word_companion.svg",
+      "category": "教育",
+      "appInfo": {
+        "bundleName": "com.example.echowordcompanion",
+        "moduleName": "entry",
+        "abilityName": "WordReviewAgentAbility",
+        "deviceTypes": ["phone", "tablet"],
+        "minAppVersion": "0.4.0"
+      }
+    }
+  ]
+}

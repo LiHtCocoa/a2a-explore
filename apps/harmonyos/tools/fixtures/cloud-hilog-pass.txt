@@ -1,0 +1,12 @@
+EchoWordAgent runId=run-a1 route taskId=task-a1 publicIntent=START_REVIEW_IN_APP mode=APP_HANDOFF continuation=COMPLETE_AFTER_HANDOFF rejected=false reason=none
+EchoWordAgent runId=run-a1 taskId=task-a1 publicIntent=START_REVIEW_IN_APP mode=APP_HANDOFF continuation=COMPLETE_AFTER_HANDOFF artifactType=learning.app-handoff.v1 artifactId=artifact-a1 lastChunk=true durationMs=2
+EchoWordAgent runId=run-a1 taskId=task-a1 contextId=context-a1 previousState=1 nextState=3 messageId=message-a1 publicIntent=START_REVIEW_IN_APP mode=APP_HANDOFF continuation=COMPLETE_AFTER_HANDOFF durationMs=1
+EchoWordAgent runId=run-a2 route taskId=task-a2 publicIntent=QUICK_CONFUSION_QA mode=SYSTEM_RESULT continuation=COMPLETE_AFTER_RESULT rejected=false reason=none
+EchoWordAgent runId=run-a2 taskId=task-a2 publicIntent=QUICK_CONFUSION_QA mode=SYSTEM_RESULT continuation=COMPLETE_AFTER_RESULT artifactType=learning.quick-confusion-answer.v1 artifactId=artifact-a2 lastChunk=true durationMs=2
+EchoWordAgent runId=run-a2 taskId=task-a2 contextId=context-a2 previousState=1 nextState=3 messageId=message-a2 publicIntent=QUICK_CONFUSION_QA mode=SYSTEM_RESULT continuation=COMPLETE_AFTER_RESULT durationMs=1
+EchoWordAgent runId=run-a3 route taskId=task-a3 publicIntent=PRACTICE_CONFUSION_IN_APP mode=APP_HANDOFF continuation=COMPLETE_AFTER_HANDOFF rejected=false reason=none
+EchoWordAgent runId=run-a3 taskId=task-a3 publicIntent=PRACTICE_CONFUSION_IN_APP mode=APP_HANDOFF continuation=COMPLETE_AFTER_HANDOFF artifactType=learning.app-handoff.v1 artifactId=artifact-a3 lastChunk=true durationMs=2
+EchoWordAgent runId=run-a3 taskId=task-a3 contextId=context-a3 previousState=1 nextState=3 messageId=message-a3 publicIntent=PRACTICE_CONFUSION_IN_APP mode=APP_HANDOFF continuation=COMPLETE_AFTER_HANDOFF durationMs=1
+EchoWordAgent runId=run-cancel taskId=task-cancel contextId=context-cancel previousState=1 nextState=4 messageId=message-cancel publicIntent=START_REVIEW_IN_APP mode=APP_HANDOFF continuation=COMPLETE_AFTER_HANDOFF durationMs=1
+EchoWordAgent runId=run-reject taskId=task-reject contextId=context-reject previousState=1 nextState=6 messageId=message-reject publicIntent=none mode=none continuation=none durationMs=1
+EchoWordAgent runId=run-clear clearContext contextId=context-clear clearedAdapterTasks=1 appSessionsAffected=0

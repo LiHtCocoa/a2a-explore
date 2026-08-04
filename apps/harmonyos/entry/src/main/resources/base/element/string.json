@@ -1,0 +1,20 @@
+{
+  "string": [
+    {
+      "name": "entry_label",
+      "value": "回声词伴"
+    },
+    {
+      "name": "module_desc",
+      "value": "学习优先的端侧 A2A 单词陪练探索"
+    },
+    {
+      "name": "entry_ability_desc",
+      "value": "回声词伴应用界面"
+    },
+    {
+      "name": "agent_ability_desc",
+      "value": "处理易错词抽背与学习任务状态的端侧智能体"
+    }
+  ]
+}

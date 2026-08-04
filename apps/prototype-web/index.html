@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="回声词伴：小艺系统 Agent 与应用内 Agent 协作原型">
+  <title>回声词伴 · Agent 协作原型</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="prototype-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">AGENT COLLABORATION PROTOTYPE · V0.3</p>
+        <h1>回声词伴</h1>
+        <p class="lede">小艺负责系统入口与系统能力，应用内 Agent 负责真正的学习。</p>
+      </div>
+      <div class="principle-pill">系统 Agent ≠ 应用 Agent</div>
+    </header>
+
+    <nav class="scenario-tabs" aria-label="A2A 协作场景">
+      <button class="scenario-tab is-active" type="button" data-scenario="handoff" aria-pressed="true">打开应用复习</button>
+      <button class="scenario-tab" type="button" data-scenario="quick" aria-pressed="false">系统内快速辨析</button>
+      <button class="scenario-tab" type="button" data-scenario="schedule" aria-pressed="false">委托系统提醒</button>
+      <button class="scenario-tab" type="button" data-scenario="companion" aria-pressed="false">显式系统伴随</button>
+    </nav>
+
+    <section class="stage" aria-label="系统 Agent 与应用 Agent 协作原型">
+      <aside class="system-surface" aria-label="小艺系统侧语义示意">
+        <div class="surface-heading">
+          <div class="celia-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div>
+            <p class="panel-kicker">SYSTEM AGENT SURFACE</p>
+            <h2>小艺侧语义示意</h2>
+          </div>
+        </div>
+        <p class="surface-disclaimer">实际布局、卡片与系统控件由小艺决定，应用只能返回语义状态和结果。</p>
+
+        <div class="user-utterance">
+          <span>用户</span>
+          <strong id="userUtterance">陪我复习今天到期的单词</strong>
+        </div>
+
+        <div class="system-reply" aria-live="polite">
+          <span id="systemReplyLabel">识别到应用入口意图</span>
+          <p id="systemReply">我可以把“复习今日到期词”的目标交给回声词伴。进入应用后，由应用内 Agent 选择内容和教学方式。</p>
+        </div>
+
+        <div class="quick-result" id="quickResult" hidden>
+          <span>系统侧短结果</span>
+          <strong>resistant 是抵抗影响；resilient 是受冲击后能够恢复。</strong>
+          <p>这是最小解释。真正练会需要进入应用做新的情境判断。</p>
+        </div>
+
+        <div class="schedule-pending" id="schedulePending" hidden>
+          <span>平台能力待验证</span>
+          <strong>每天 21:00 · 到期与易错词</strong>
+          <p>原型只建模系统确认与授权，不伪造计划已经创建，也不虚构计划 ID。</p>
+        </div>
+
+        <div class="companion-projection" id="companionProjection" hidden>
+          <div>
+            <span>应用提供的最小投影</span>
+            <strong id="projectionProgress">0 / 3</strong>
+          </div>
+          <div class="progress-track"><span id="projectionBar"></span></div>
+          <p id="projectionCopy">应用内学习刚开始；答案、提示和个性化数据不会同步到系统 UI。</p>
+        </div>
+
+        <div class="system-actions">
+          <button class="system-primary" type="button" id="systemPrimary">打开回声词伴</button>
+          <button class="system-secondary" type="button" id="systemSecondary">取消</button>
+        </div>
+
+        <div class="system-status">
+          <div><span>公开意图</span><code id="publicIntent">START_REVIEW_IN_APP</code></div>
+          <div><span>A2A</span><code id="connectionState">READY_TO_HANDOFF</code></div>
+        </div>
+      </aside>
+
+      <section class="handoff-rail" aria-label="Agent 协作边界">
+        <p class="panel-kicker">COLLABORATION BOUNDARY</p>
+        <div class="rail-node rail-system">系统 Agent</div>
+        <div class="rail-line"><span id="railPulse"></span></div>
+        <div class="rail-contract">
+          <span id="interactionMode">APP_HANDOFF</span>
+          <strong id="continuationPolicy">交接后结束 A2A</strong>
+          <small id="bridgeStatus">尚未交接</small>
+        </div>
+        <div class="rail-line rail-line-down"></div>
+        <div class="rail-node rail-app">应用公开 Adapter</div>
+        <div class="rail-caption">App Agent 在此边界之后独立运行</div>
+      </section>
+
+      <section class="app-surface" aria-label="回声词伴应用界面">
+        <div class="app-boundary-note">
+          <span>APP OWNED SURFACE</span>
+          <strong id="appAgentState">App Agent · 等待本地会话</strong>
+        </div>
+
+        <div class="phone" aria-label="回声词伴手机界面">
+          <div class="phone-status"><span>9:41</span><span>● ● ▰</span></div>
+          <div class="app-screen">
+            <header class="app-bar">
+              <button class="icon-button" type="button" id="backButton" aria-label="返回">←</button>
+              <div>
+                <p class="app-bar-caption" id="appBarCaption">应用内 Agent</p>
+                <strong id="appBarTitle">今日复习</strong>
+              </div>
+              <button class="avatar-button" type="button" aria-label="学习档案">Y</button>
+            </header>
+
+            <section class="landing-view" id="landingView">
+              <div class="entry-notice" id="entryNotice" hidden>
+                <span>来自小艺的公开意图</span>
+                <strong id="entryIntentText">复习今日到期词 · 数量 6</strong>
+                <small>A2A 已完成交接，后续教学由 App Agent 独立负责。</small>
+              </div>
+
+              <div class="greeting-block">
+                <p>应用内 Agent 已读取你的长期学习记录</p>
+                <h2>6 个词正在等你想起</h2>
+              </div>
+
+              <button class="session-card" type="button" id="startSession">
+                <span class="session-label">App Agent 计划 · 约 3 分钟</span>
+                <strong>抽背上次的易错词</strong>
+                <span class="session-meta">先回忆，卡住时再由应用 Agent 递一层提示</span>
+                <span class="session-cta">开始抽背 <span aria-hidden="true">→</span></span>
+              </button>
+
+              <div class="reason-row">
+                <span>为什么是这 6 个？</span>
+                <button type="button" id="whyButton">查看依据</button>
+              </div>
+
+              <div class="explain-sheet" id="whySheet" hidden>
+                <div>
+                  <strong>App Agent 的选择依据</strong>
+                  <button type="button" id="closeWhy" aria-label="关闭">×</button>
+                </div>
+                <p>3 个今天到期，2 个上次依赖提示，1 个和近义词反复混淆。小艺没有参与这一步教学决策。</p>
+              </div>
+            </section>
+
+            <section class="study-view" id="studyView" hidden>
+              <div class="study-progress">
+                <span id="studyStep">第 1 个，共 3 个</span>
+                <div class="progress-track"><span id="studyProgressBar"></span></div>
+              </div>
+
+              <div class="word-stage">
+                <p class="recall-label" id="recallLabel">先回忆，再求助</p>
+                <h2 id="wordText">resilient</h2>
+                <p class="phonetic" id="phoneticText">/rɪˈzɪliənt/</p>
+                <p class="prompt-text" id="promptText">不看答案，你会怎样解释它？</p>
+              </div>
+
+              <div class="hint-area" id="hintArea" aria-live="polite" hidden>
+                <div class="hint-heading">
+                  <span id="hintTitle">提示 1 · 方向</span>
+                  <small id="hintCounter">1 / 2</small>
+                </div>
+                <p id="hintText">它描述的不是“抵抗变化”，而是经历压力后恢复过来的能力。</p>
+                <button type="button" id="nextHint">再给一层</button>
+              </div>
+
+              <div class="hint-outcome-actions" id="hintOutcomeActions" hidden>
+                <button type="button" id="hintRecovered">提示后想起来了</button>
+                <button type="button" id="hintStillStuck">还是没想起</button>
+              </div>
+
+              <div class="answer-reveal" id="answerReveal" aria-live="polite" hidden>
+                <span>核心含义</span>
+                <strong id="answerText">有韧性的；能从困难中恢复的</strong>
+                <p id="contrastText">易混：resistant 强调抵抗，resilient 强调受压后的恢复。</p>
+              </div>
+
+              <div class="confidence-actions" id="confidenceActions">
+                <button type="button" data-confidence="know">直接想起了</button>
+                <button type="button" data-confidence="fuzzy">需要一点提示</button>
+                <button type="button" data-confidence="miss">完全卡住</button>
+              </div>
+
+              <button class="primary-action" type="button" id="nextWord" hidden>下一词</button>
+            </section>
+
+            <section class="deep-view" id="deepView" hidden>
+              <div class="deep-context">
+                <span>App Agent 深度练习</span>
+                <strong>resilient ≠ resistant</strong>
+              </div>
+              <p class="recall-label">先判断，再看解释</p>
+              <h2 id="deepPrompt">“她经历挫折后，很快恢复了状态。”</h2>
+              <p class="deep-question">这里更准确的是哪个词？</p>
+              <div class="transfer-options">
+                <button type="button" data-deep-choice="resilient"><strong>resilient</strong></button>
+                <button type="button" data-deep-choice="resistant"><strong>resistant</strong></button>
+              </div>
+              <div class="deep-feedback" id="deepFeedback" aria-live="polite" hidden>
+                <span id="deepFeedbackLabel">判断正确</span>
+                <strong id="deepFeedbackTitle">这里是 resilient</strong>
+                <p id="deepFeedbackCopy">resistant 是抵抗影响，resilient 是受过冲击后还能恢复。</p>
+              </div>
+              <button class="primary-action" type="button" id="deepRetry" hidden>换个情境再判断</button>
+            </section>
+
+            <section class="summary-view" id="summaryView" hidden>
+              <div class="summary-mark" aria-hidden="true">✓</div>
+              <p class="recall-label">App session 完成</p>
+              <h2>学习事实保存在应用内</h2>
+              <p class="summary-copy" id="summaryCopy">本轮学习证据会在这里汇总。</p>
+              <div class="summary-artifact">
+                <div><span>独立想起</span><strong id="summaryKnow">1</strong></div>
+                <div><span>提示后</span><strong id="summaryHint">1</strong></div>
+                <div><span>待巩固</span><strong id="summaryMiss">1</strong></div>
+              </div>
+              <div class="next-review">
+                <span>App Agent 建议</span>
+                <strong id="nextReviewText">明晚复习最需要巩固的词</strong>
+              </div>
+              <button class="primary-action" type="button" id="requestReminder">让小艺处理系统提醒</button>
+              <button class="quiet-action" type="button" id="restartSession">开始新一轮</button>
+            </section>
+          </div>
+          <div class="home-indicator" aria-hidden="true"></div>
+        </div>
+      </section>
+    </section>
+
+    <footer class="prototype-notes">
+      <p><strong>观察重点：</strong>打开 App、是否继续 A2A、是否调用系统能力是三个独立决策。默认复习在交接后由 App Agent 独立运行；只有用户明确要求时才保留系统投影。</p>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

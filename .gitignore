@@ -1,0 +1,41 @@
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node / package manager dependencies
+node_modules/
+oh_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# HarmonyOS / ArkTS build outputs and caches
+.hvigor/
+**/.hvigor/
+**/build/
+**/.preview/
+**/generated/
+*.hap
+*.har
+*.hsp
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
