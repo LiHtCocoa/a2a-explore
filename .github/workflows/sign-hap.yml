@@ -1,7 +1,7 @@
 name: Sign HAP (Manual)
 
 # 仅手动触发：维护者在 Actions 页面选择一次 Build HAP 的运行编号，验证 HAP 签名流水线。
-# 安全约束：签名产物不上传 artifact、不对外暴露（仅留存在 runner 临时文件系统）。
+# 签名产物以 artifact 上传（与 unsigned 一样公开可下载）；secrets 值全程不落盘不打印。
 # 不随 push / PR 自动运行。
 on:
   workflow_dispatch:
@@ -11,9 +11,9 @@ on:
         required: true
         type: string
 
-# 最小权限。签名产物不上传 artifact，sign job 保持 actions: read。
+# upload-artifact 需要 actions: write（仅 artifact 权限，不涉及 secrets 内容）。
 permissions:
-  actions: read
+  actions: write
   contents: read
 
 concurrency:
@@ -70,9 +70,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: signing
-    # 签名产物不上传 artifact：actions: read 足够（下载 unsigned artifact 只需 read）
+    # 下载 unsigned 只需 read；上传 signed artifact 需 write
     permissions:
-      actions: read
+      actions: write
       contents: read
     steps:
       - name: Checkout (仅取受信任的 scripts/sign-hap.sh)
@@ -130,7 +130,7 @@ jobs:
           bash scripts/sign-hap.sh "$UNSIGNED" signed/a2a-explore-signed.hap
           ls -l signed
 
-      - name: Verify signed HAP (不公开上传, 仅验证签名有效)
+      - name: Verify signed HAP (校验签名有效性)
         run: |
           set -euo pipefail
           VERIFY_WORK="$(mktemp -d)"
@@ -142,7 +142,13 @@ jobs:
             > "$VERIFY_WORK/verify.log" 2>&1 || { cat "$VERIFY_WORK/verify.log"; echo "::error::签名校验失败"; exit 1; }
           grep -qi "Verify success" "$VERIFY_WORK/verify.log" || { cat "$VERIFY_WORK/verify.log"; echo "::error::verify-app 未输出 Verify success"; exit 1; }
           echo "签名校验通过: $(grep -oi 'Digest verify result: [a-z]*' "$VERIFY_WORK/verify.log" | head -1)"
-          # 安全: 签名产物仅存在于 runner 临时文件系统, 不上传 artifact, 不对外暴露
+
+      - name: Upload signed HAP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: a2a-explore-signed-hap
+          path: signed/a2a-explore-signed.hap
+          if-no-files-found: error
 
       - name: Remove local signing materials
         if: always()
