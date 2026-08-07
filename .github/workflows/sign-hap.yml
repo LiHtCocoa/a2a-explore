@@ -57,7 +57,7 @@ jobs:
 
           ART_JSON="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID/artifacts" --jq 'first(.artifacts[] | select(.name == "a2a-explore-hap"))' 2>/dev/null || echo null)"
           ART_ID="$(jq -r '.id // empty' <<<"$ART_JSON")"
-          ART_EXPIRED="$(jq -r '.expired // "true"' <<<"$ART_JSON")"
+          ART_EXPIRED="$(jq -r '.expired' <<<"$ART_JSON")"
           [[ -n "$ART_ID" ]] || { echo "::error::run $RUN_ID 上没有名为 a2a-explore-hap 的 artifact"; exit 1; }
           [[ "$ART_EXPIRED" == "false" ]] || { echo "::error::run $RUN_ID 的 artifact 已过期"; exit 1; }
 
