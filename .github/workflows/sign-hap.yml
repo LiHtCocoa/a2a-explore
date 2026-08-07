@@ -1,0 +1,142 @@
+name: Sign HAP (Manual)
+
+# 仅手动触发：维护者在 Actions 页面选择一次 Build HAP 的运行编号，生成已签名 HAP。
+# 不随 push / PR 自动运行。
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Build HAP workflow 的 run_id（Actions → Build HAP → 运行编号，或地址栏 /actions/runs/<run_id>）"
+        required: true
+        type: string
+
+# 最小权限。注意：sign job 因需要上传 artifact 而提升 actions 为 write（见该 job 注释）。
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: sign-hap
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate source run
+    runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.check.outputs.run_id }}
+      artifact_name: ${{ steps.check.outputs.artifact_name }}
+    steps:
+      - name: Validate run_id
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.inputs.run_id }}
+        run: |
+          set -euo pipefail
+          RUN_ID="${RUN_ID// /}"
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "::error::run_id 必须是数字，收到: $RUN_ID"; exit 1; }
+
+          RUN_JSON="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID" || { echo "::error::run $RUN_ID 不存在或无权访问"; exit 1; })"
+          WF_PATH="$(jq -r '.path' <<<"$RUN_JSON")"
+          WF_NAME="$(jq -r '.name' <<<"$RUN_JSON")"
+          CONCLUSION="$(jq -r '.conclusion' <<<"$RUN_JSON")"
+          EVENT="$(jq -r '.event' <<<"$RUN_JSON")"
+          HEAD_BRANCH="$(jq -r '.head_branch' <<<"$RUN_JSON")"
+          DEFAULT_BRANCH="$(gh api "repos/${{ github.repository }}" --jq '.default_branch')"
+
+          echo "目标运行: workflow=$WF_NAME ($WF_PATH) | event=$EVENT | branch=$HEAD_BRANCH | conclusion=$CONCLUSION | 触发者=${{ github.actor }}"
+          [[ "$WF_PATH" == ".github/workflows/build.yml" ]] || { echo "::error::run $RUN_ID 不属于 Build HAP 工作流（实际: $WF_PATH）"; exit 1; }
+          [[ "$CONCLUSION" == "success" ]] || { echo "::error::run $RUN_ID 结论为 $CONCLUSION，仅允许对 success 的运行签名"; exit 1; }
+          # 可信来源：默认分支的 push；或维护者手动触发（workflow_dispatch）
+          if [[ "$EVENT" == "push" ]]; then
+            [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]] || { echo "::error::run $RUN_ID 来自分支 $HEAD_BRANCH（非默认分支 $DEFAULT_BRANCH），拒绝"; exit 1; }
+          elif [[ "$EVENT" != "workflow_dispatch" ]]; then
+            echo "::error::run $RUN_ID 来源事件 $EVENT 不受信，拒绝"; exit 1
+          fi
+
+          ART_JSON="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID/artifacts" --jq 'first(.artifacts[] | select(.name == "a2a-explore-hap"))' 2>/dev/null || echo null)"
+          ART_ID="$(jq -r '.id // empty' <<<"$ART_JSON")"
+          ART_EXPIRED="$(jq -r '.expired // "true"' <<<"$ART_JSON")"
+          [[ -n "$ART_ID" ]] || { echo "::error::run $RUN_ID 上没有名为 a2a-explore-hap 的 artifact"; exit 1; }
+          [[ "$ART_EXPIRED" == "false" ]] || { echo "::error::run $RUN_ID 的 artifact 已过期"; exit 1; }
+
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=a2a-explore-hap" >> "$GITHUB_OUTPUT"
+
+  sign:
+    name: Sign HAP (post-sign)
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: signing
+    # 上传 artifact 需要 actions: write（下载/校验仅需 read，但同一 job 内取 write）
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Checkout (仅取受信任的 scripts/sign-hap.sh)
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Restore cached Command Line Tools 26.0.0.621
+        id: cache-clt
+        uses: actions/cache@v4
+        with:
+          path: /tmp/commandline-tools-621.zip
+          key: devecocl-26.0.0.621-beta2
+
+      - name: Download Command Line Tools 26.0.0.621 (cache miss)
+        if: steps.cache-clt.outputs.cache-hit != 'true'
+        run: |
+          curl -fL --retry 3 -o /tmp/commandline-tools-621.zip \
+            "https://contentcenter-vali-drcn.dbankcdn.cn/pvt_2/DeveloperAlliance_package_901_9/95/v3/ksUKbWstTiqarw0qRRlIXQ/commandline-tools-linux-x64-26.0.0.621.zip?HW-CC-KV=V1&HW-CC-Date=20260807T073632Z&HW-CC-Expire=315360000&HW-CC-Sign=A35EAF190071EF4A275BEA934F065B12D557E955718F037D1689D078E30B83DF"
+
+      - name: Unpack Command Line Tools (含 hap-sign-tool.jar)
+        run: |
+          unzip -q /tmp/commandline-tools-621.zip
+          test -f command-line-tools/sdk/default/openharmony/toolchains/lib/hap-sign-tool.jar
+
+      - name: Download unsigned HAP artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ needs.validate.outputs.run_id }}
+          name: ${{ needs.validate.outputs.artifact_name }}
+          path: unsigned
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign HAP (unsigned.hap -> signed.hap)
+        env:
+          HAP_P12_BASE64: ${{ secrets.HAP_P12_BASE64 }}
+          HAP_CER_BASE64: ${{ secrets.HAP_CER_BASE64 }}
+          HAP_P7B_BASE64: ${{ secrets.HAP_P7B_BASE64 }}
+          HAP_KEY_ALIAS: ${{ secrets.HAP_KEY_ALIAS }}
+          HAP_KEY_PASSWORD: ${{ secrets.HAP_KEY_PASSWORD }}
+          HAP_STORE_PASSWORD: ${{ secrets.HAP_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # artifact 仅作为二进制输入：定位 *.hap 并校验 ZIP 魔数（HAP 即 zip），绝不执行其内容
+          find unsigned -maxdepth 2 -name '*.hap' -type f -print
+          UNSIGNED="$(find unsigned -maxdepth 2 -name '*.hap' -type f | head -1)"
+          test -n "$UNSIGNED" || { echo "::error::artifact 内没有 .hap 文件"; exit 1; }
+          MAGIC="$(head -c 2 "$UNSIGNED" | od -An -tx1 | tr -d ' \n')"
+          [[ "$MAGIC" == "504b" ]] || { echo "::error::$UNSIGNED 不是 zip/HAP（magic=$MAGIC）"; exit 1; }
+          echo "待签名: $UNSIGNED ($(stat -c%s "$UNSIGNED") bytes)"
+          bash scripts/sign-hap.sh "$UNSIGNED" signed/a2a-explore-signed.hap
+          ls -l signed
+
+      - name: Upload signed HAP artifact (2 天短保留, 不发布 Release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: a2a-explore-signed-hap
+          path: signed/a2a-explore-signed.hap
+          retention-days: 2
+          if-no-files-found: error
+
+      - name: Remove local signing materials
+        if: always()
+        run: rm -rf unsigned signed

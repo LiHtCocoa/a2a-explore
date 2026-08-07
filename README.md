@@ -33,3 +33,31 @@ docs/engineering/     SDK 能力、构建、云调试和日志规范
 docs/research/        研究结论与待验证项
 artifacts/            构建和设备调试证据
 ```
+
+## 手动签名 HAP（Sign HAP workflow）
+
+CI 默认产出 **unsigned** HAP（`a2a-explore-hap` artifact）。需要真机 / AGC 验证时，由维护者手动触发签名流水线，得到 signed HAP：
+
+### 1. 创建 "signing" Environment
+仓库 → **Settings → Environments → New environment**，名称填 `signing`。
+建议在环境的 **Required reviewers** 中添加你自己 / 受信维护者，使签名 job 需人工批准后才执行。
+
+### 2. 添加 Environment Secrets（全部添加到 "signing" 环境，禁止提交到仓库）
+| Secret | 值 |
+|---|---|
+| `HAP_P12_BASE64` | keystore 文件 base64：`base64 -w0 app.p12` |
+| `HAP_CER_BASE64` | 应用证书 base64：`base64 -w0 app.cer` |
+| `HAP_P7B_BASE64` | Profile base64：`base64 -w0 app.p7b`（与具体应用绑定，含包名/证书/权限） |
+| `HAP_KEY_ALIAS` | key alias |
+| `HAP_KEY_PASSWORD` | key 密码 |
+| `HAP_STORE_PASSWORD` | keystore 密码 |
+
+### 3. 找到 Build run_id
+Actions → 选择最近成功的 **Build HAP** 运行 → 运行编号（或地址栏 `/actions/runs/<run_id>`）。
+
+### 4. 手动运行签名
+Actions → **Sign HAP (Manual)** → **Run workflow** → 填入 `run_id` → **Run**。
+流水线先校验该 run：必须属于本仓库、必须是 Build HAP 工作流、结论为 success、来源为默认分支 push（或手动触发）、artifact 未过期，任一不满足则拒绝。
+
+### 5. 下载 signed artifact
+运行结束 → **a2a-explore-signed-hap** artifact → **Download**（默认仅保留 2 天，不发布 GitHub Release）。
